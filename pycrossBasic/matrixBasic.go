@@ -46,7 +46,8 @@ func combine(res *[][]int, lineLen int, remainingDef []int, workLine []int, sepa
 		return
 	}
 
-	block, remainingDef := remainingDef[len(remainingDef)-1], remainingDef[:len(remainingDef)-1]
+	//block, remainingDef := remainingDef[len(remainingDef)-1], remainingDef[:len(remainingDef)-1]
+	block, remainingDef := remainingDef[0], remainingDef[1:]
 	moveRange := remainingLen - block - len(separator) - sum(remainingDef) - len(remainingDef) + 1
 
 	for i := 0; i < moveRange; i++ {
@@ -54,7 +55,8 @@ func combine(res *[][]int, lineLen int, remainingDef []int, workLine []int, sepa
 			concat([][]int{workLine, separator, array(0, i), array(1, block)}),
 			[]int{0})
 	}
-	remainingDef = append([]int{block}, remainingDef...)
+	//remainingDef = append([]int{block}, remainingDef...)
+	remainingDef = append(remainingDef, block)
 }
 
 func getLineCombs(lineLength int, lineDef []int) *[][]int {

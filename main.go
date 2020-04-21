@@ -6,11 +6,14 @@ import (
 )
 
 func main() {
-	id := 1
-	rows, cols := baseIo.GetData(id)
+	for i := 1 ; i < 6 ; i++ {
+		execute(i)
+	}
+}
+
+func execute(i int) {
+	rows, cols := baseIo.GetData(i)
 	pycross := pycrossBasic.Init(rows, cols)
-	print(pycross)
 	res := pycrossBasic.Solve(pycross)
-	//res := []string{"*   *", "**  *", "**  ", "*** ", " *** "}
-	baseIo.CheckRes(id, res)
+	baseIo.CheckRes(i, res)
 }
