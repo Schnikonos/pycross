@@ -46,7 +46,6 @@ func combine(res *[][]int, lineLen int, remainingDef []int, workLine []int, sepa
 		return
 	}
 
-	//block, remainingDef := remainingDef[len(remainingDef)-1], remainingDef[:len(remainingDef)-1]
 	block, remainingDef := remainingDef[0], remainingDef[1:]
 	moveRange := remainingLen - block - len(separator) - sum(remainingDef) - len(remainingDef) + 1
 
@@ -55,7 +54,6 @@ func combine(res *[][]int, lineLen int, remainingDef []int, workLine []int, sepa
 			concat([][]int{workLine, separator, array(0, i), array(1, block)}),
 			[]int{0})
 	}
-	//remainingDef = append([]int{block}, remainingDef...)
 	remainingDef = append(remainingDef, block)
 }
 
@@ -100,38 +98,47 @@ func checkLine(currentLine *[]int, pattern *[]int) bool {
 	return true
 }
 
-func filter(arr *[][]int, line *[]int) *[][]int {
+func filter(combs *[][]int, line *[]int, index int, channel chan<- *combChannel) {
 	result := [][]int{}
-	for i := range *arr {
-		if checkLine(line, &(*arr)[i]) {
-			result = append(result, (*arr)[i])
+	for i := range *combs {
+		if checkLine(line, &(*combs)[i]) {
+			result = append(result, (*combs)[i])
 		}
 	}
-	return &result
+
+	channel <- &combChannel{
+		index:  index,
+		result: &result,
+	}
+}
+
+type combChannel struct {
+	index  int
+	result *[][]int
 }
 
 func filterComb(linesComb *[][][]int, matrix *[][]int, getLine func(int, *[][]int) *[]int) bool {
 	oldComb := 0
 	newComb := 0
 
+	channel := make(chan *combChannel)
+
 	for i, lineComb := range *linesComb {
 		oldComb += len(lineComb)
-		(*linesComb)[i] = *filter(&lineComb, getLine(i, matrix))
-		newComb += len((*linesComb)[i])
+		line := getLine(i, matrix)
+		go filter(&(*linesComb)[i], line, i, channel)
 	}
 
-	if newComb == 0 {
-		print("error")
+	for range *linesComb {
+		channelComb := <-channel
+		(*linesComb)[channelComb.index] = *channelComb.result
+		newComb += len((*linesComb)[channelComb.index])
 	}
 
 	return oldComb != newComb
 }
 
 func getGlobalState(index int, combinations *[][]int) int {
-	if len((*combinations)) == 0 || len((*combinations)[0]) == 0 {
-		print("error")
-	}
-
 	c := (*combinations)[0][index]
 	for _, el := range *combinations {
 		if el[index] != c {
@@ -141,28 +148,30 @@ func getGlobalState(index int, combinations *[][]int) int {
 	return c
 }
 
-func (picross *Picross) reduce() bool {
-	for i := 0; i < picross.rowLen; i++ {
-		for j := 0; j < picross.colLen; j++ {
-			if picross.matrix[i][j] == -1 {
-				if len(picross.rowComb[i]) == 0 {
-					print("error")
-				}
+func threadCompute(i, j int, p *Picross, channel chan<- bool) {
+	if p.matrix[i][j] == -1 {
+		p.matrix[i][j] = getGlobalState(j, &p.rowComb[i])
+	}
+	if p.matrix[i][j] == -1 {
+		p.matrix[i][j] = getGlobalState(i, &p.colComb[j])
+	}
+	channel <- true
+}
 
-				picross.matrix[i][j] = getGlobalState(j, &picross.rowComb[i])
-			}
-			if picross.matrix[i][j] == -1 {
-				if len(picross.colComb[j]) == 0 {
-					print("error")
-				}
-
-				picross.matrix[i][j] = getGlobalState(i, &picross.colComb[j])
-			}
+func (p *Picross) reduce() bool {
+	channel := make(chan bool)
+	for i := 0; i < p.rowLen; i++ {
+		for j := 0; j < p.colLen; j++ {
+			go threadCompute(i, j, p, channel)
 		}
 	}
 
-	rowsChange := filterComb(&picross.rowComb, &picross.matrix, func(i int, matrix *[][]int) *[]int { return &(*matrix)[i] })
-	colsChange := filterComb(&picross.colComb, &picross.matrix, func(i int, matrix *[][]int) *[]int {
+	for i := 0; i < p.rowLen*p.colLen; i++ {
+		<-channel
+	}
+
+	rowsChange := filterComb(&p.rowComb, &p.matrix, func(i int, matrix *[][]int) *[]int { return &(*matrix)[i] })
+	colsChange := filterComb(&p.colComb, &p.matrix, func(i int, matrix *[][]int) *[]int {
 		res := make([]int, len(*matrix))
 		for j, el := range *matrix {
 			res[j] = el[i]

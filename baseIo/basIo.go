@@ -18,7 +18,6 @@ var timeStart time.Time
 func GetData(i int) (rows [][]int, cols [][]int) {
 	jsonFile, _ := os.Open(fmt.Sprintf("testFiles/test%v_in.json", i))
 	defer jsonFile.Close()
-	fmt.Print(jsonFile)
 	var data rawData
 	byteValue, _ := ioutil.ReadAll(jsonFile)
 	json.Unmarshal(byteValue, &data)
@@ -29,7 +28,6 @@ func GetData(i int) (rows [][]int, cols [][]int) {
 
 func CheckRes(i int, res []string) {
 	ellapse := time.Since(timeStart)
-	fmt.Printf("******* Ellapse: %v ********\n\n", ellapse)
 
 	for _, line := range res {
 		fmt.Print(line + "\n")
@@ -45,4 +43,6 @@ func CheckRes(i int, res []string) {
 			log.Fatal("Different results!")
 		}
 	}
+
+	fmt.Printf("-------------- OK - Ellapse: %v -----------\n\n", ellapse)
 }
