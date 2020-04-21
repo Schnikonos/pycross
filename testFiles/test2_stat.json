@@ -1,5 +1,7 @@
 {
+  "go_basic": 0.000601712,
+  "go_object": 0.000546739,
+  "nico_objects": 0.012855700000000005,
   "xavier_base_type": 0.1191275,
-  "xavier_objects": 0.007397399999999998,
-  "nico_objects": 0.012855700000000005
+  "xavier_objects": 0.007397399999999998
 }

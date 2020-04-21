@@ -13,6 +13,8 @@ import (
 
 type rawData [][][]int
 
+type stat map[string]float64
+
 var timeStart time.Time
 
 func GetData(i int) (rows [][]int, cols [][]int) {
@@ -26,7 +28,7 @@ func GetData(i int) (rows [][]int, cols [][]int) {
 	return data[0], data[1]
 }
 
-func CheckRes(i int, res []string) {
+func CheckRes(name string, i int, res []string) {
 	ellapse := time.Since(timeStart)
 
 	for _, line := range res {
@@ -43,6 +45,23 @@ func CheckRes(i int, res []string) {
 			log.Fatal("Different results!")
 		}
 	}
+
+	statFile, _ := os.Open(fmt.Sprintf("testFiles/test%v_stat.json", i))
+	var data stat
+	byteValue, _ := ioutil.ReadAll(statFile)
+	statFile.Close()
+
+	if len(byteValue) > 0 {
+		_ = json.Unmarshal(byteValue, &data)
+	} else {
+		_, _ = os.Create(fmt.Sprintf("testFiles/test%v_stat.json", i))
+		data = make(stat)
+	}
+
+	statFile, _ = os.Create(fmt.Sprintf("testFiles/test%v_stat.json", i))
+	data[name] = ellapse.Seconds()
+	result, _ := json.MarshalIndent(data, "", "  ")
+	_, _ = statFile.Write(result)
 
 	fmt.Printf("-------------- OK - Ellapse: %v -----------\n\n", ellapse)
 }
